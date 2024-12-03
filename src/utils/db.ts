@@ -1,5 +1,6 @@
 import { openDB } from 'idb';
 import type { Patient } from '../types/patient';
+import { syncPatientWithServer, deletePatientFromServer } from '../services/api';
 
 const DB_NAME = 'medical-records';
 const STORE_NAME = 'patients';
@@ -80,6 +81,20 @@ export async function addPatient(patientData: Omit<Patient, 'id'>) {
   };
   
   await db.add(STORE_NAME, patient);
+
+  // Sync with server if online
+  if (navigator.onLine) {
+    try {
+      await syncPatientWithServer(patient);
+    } catch (error) {
+      console.error('Error syncing new patient:', error);
+      // Add to sync queue for later
+      await addToSyncQueue('add', patient);
+    }
+  } else {
+    await addToSyncQueue('add', patient);
+  }
+
   return patient;
 }
 
@@ -109,6 +124,19 @@ export async function updatePatient(patient: Patient) {
   };
   
   await db.put(STORE_NAME, updatedPatient);
+
+  // Sync with server if online
+  if (navigator.onLine) {
+    try {
+      await syncPatientWithServer(updatedPatient);
+    } catch (error) {
+      console.error('Error syncing updated patient:', error);
+      await addToSyncQueue('update', updatedPatient);
+    }
+  } else {
+    await addToSyncQueue('update', updatedPatient);
+  }
+
   return updatedPatient;
 }
 
@@ -128,24 +156,52 @@ export async function softDeletePatient(id: string) {
   };
 
   await db.put(STORE_NAME, updatedPatient);
+
+  // Sync deletion with server if online
+  if (navigator.onLine) {
+    try {
+      await deletePatientFromServer(id);
+    } catch (error) {
+      console.error('Error syncing patient deletion:', error);
+      await addToSyncQueue('delete', { id });
+    }
+  } else {
+    await addToSyncQueue('delete', { id });
+  }
+
   return updatedPatient;
 }
 
-export async function restorePatient(id: string) {
+export async function addToSyncQueue(operation: string, data: any) {
   const db = await initDB();
-  const patient = await db.get(STORE_NAME, id);
-  if (!patient) return;
+  await db.add(SYNC_STORE, {
+    operation,
+    data,
+    timestamp: new Date().toISOString()
+  });
+}
 
-  const timestamp = new Date().toISOString();
-  const updatedPatient = {
-    ...patient,
-    deleted: false,
-    deletedAt: undefined,
-    deletedBy: undefined,
-    lastUpdated: timestamp,
-    lastUpdatedBy: 'current-user',
-  };
+export async function processOfflineQueue() {
+  const db = await initDB();
+  const tx = db.transaction(SYNC_STORE, 'readwrite');
+  const store = tx.objectStore(SYNC_STORE);
+  const items = await store.getAll();
 
-  await db.put(STORE_NAME, updatedPatient);
-  return updatedPatient;
+  for (const item of items) {
+    try {
+      switch (item.operation) {
+        case 'add':
+        case 'update':
+          await syncPatientWithServer(item.data);
+          break;
+        case 'delete':
+          await deletePatientFromServer(item.data.id);
+          break;
+      }
+      // Remove processed item from queue
+      await store.delete(item.id);
+    } catch (error) {
+      console.error('Error processing sync queue item:', error);
+    }
+  }
 }

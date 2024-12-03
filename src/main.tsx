@@ -2,11 +2,11 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
-import { initOfflineSync } from './utils/offlineStorage';
+import { initializeSync } from './utils/syncManager';
 import { register as registerServiceWorker } from './serviceWorkerRegistration';
 
-// Initialize offline sync functionality
-initOfflineSync();
+// Initialize sync functionality
+initializeSync();
 
 // Register service worker
 registerServiceWorker();
