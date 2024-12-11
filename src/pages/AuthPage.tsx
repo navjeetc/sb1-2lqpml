@@ -2,11 +2,10 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
-import { supabase } from '../config/supabase';
-import { AUTH_CONFIG } from '../config/auth';
+import { supabase, isSupabaseConfigured } from '../config/supabase';
+import { AUTH_CONFIG, getSiteUrl } from '../config/auth';
 import { useAuth } from '../contexts/AuthContext';
 import { appConfig } from '../config/appConfig';
-import { getSupabaseProjectInfo } from '../utils/supabaseInfo';
 import { Stethoscope } from 'lucide-react';
 
 export function AuthPage() {
@@ -14,8 +13,8 @@ export function AuthPage() {
   const location = useLocation();
   const { user } = useAuth();
   const from = (location.state as any)?.from?.pathname || '/';
-  const { isConfigured } = getSupabaseProjectInfo();
-  const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
+  const siteUrl = getSiteUrl();
+  const isConfigured = isSupabaseConfigured();
 
   React.useEffect(() => {
     if (user) {
@@ -40,27 +39,31 @@ export function AuthPage() {
           </p>
         </div>
 
-        <div className="mt-8">
-          <Auth
-            supabaseClient={supabase}
-            appearance={{
-              theme: ThemeSupa,
-              variables: {
-                default: {
-                  colors: AUTH_CONFIG.appearance.theme.colors
+        {isConfigured ? (
+          <div className="mt-8">
+            <Auth
+              supabaseClient={supabase}
+              appearance={{
+                theme: ThemeSupa,
+                variables: {
+                  default: {
+                    colors: AUTH_CONFIG.appearance.theme.colors
+                  },
                 },
-              },
-              className: AUTH_CONFIG.appearance.classes,
-            }}
-            providers={AUTH_CONFIG.providers}
-            redirectTo={`${siteUrl}/auth/callback`}
-          />
-        </div>
-
-        {!isConfigured && (
+                className: AUTH_CONFIG.appearance.classes,
+              }}
+              providers={AUTH_CONFIG.providers}
+              redirectTo={`${siteUrl}/auth/callback`}
+            />
+          </div>
+        ) : (
           <div className="mt-4 p-4 bg-red-50 rounded-md">
             <p className="text-sm text-red-600">
-              Error: Authentication not properly configured. Please check your Supabase settings.
+              Error: Authentication not properly configured. Please check your environment variables:
+              <ul className="list-disc ml-4 mt-2">
+                <li>VITE_SUPABASE_URL</li>
+                <li>VITE_SUPABASE_ANON_KEY</li>
+              </ul>
             </p>
           </div>
         )}

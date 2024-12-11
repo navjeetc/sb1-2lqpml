@@ -1,6 +1,7 @@
 import { openDB } from 'idb';
 import type { Patient } from '../types/patient';
 import { syncPatientWithServer, deletePatientFromServer } from '../services/api';
+import { supabase } from '../config/supabase';
 
 const DB_NAME = 'medical-records';
 const STORE_NAME = 'patients';
@@ -9,7 +10,6 @@ const SYNC_STORE = 'sync-queue';
 export async function initDB() {
   const db = await openDB(DB_NAME, 1, {
     upgrade(db) {
-      // Create patients store if it doesn't exist
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
         store.createIndex('lastName', 'lastName');
@@ -18,7 +18,6 @@ export async function initDB() {
         store.createIndex('deleted', 'deleted');
       }
 
-      // Create sync queue store if it doesn't exist
       if (!db.objectStoreNames.contains(SYNC_STORE)) {
         db.createObjectStore(SYNC_STORE, { 
           keyPath: 'id',
@@ -35,6 +34,10 @@ export async function addPatient(patientData: Omit<Patient, 'id'>) {
   const id = crypto.randomUUID();
   const timestamp = new Date().toISOString();
   
+  // Get current user ID
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('No authenticated user');
+  
   const patient: Patient = {
     id,
     firstName: patientData.firstName || '',
@@ -43,40 +46,41 @@ export async function addPatient(patientData: Omit<Patient, 'id'>) {
     gender: patientData.gender || 'other',
     email: patientData.email || '',
     phone: patientData.phone || '',
-    address: {
-      street: patientData.address?.street || '',
-      city: patientData.address?.city || '',
-      state: patientData.address?.state || '',
-      zipCode: patientData.address?.zipCode || '',
+    address: patientData.address || {
+      street: '',
+      city: '',
+      state: '',
+      zipCode: '',
     },
-    emergencyContact: {
-      name: patientData.emergencyContact?.name || '',
-      relationship: patientData.emergencyContact?.relationship || '',
-      phone: patientData.emergencyContact?.phone || '',
+    emergencyContact: patientData.emergencyContact || {
+      name: '',
+      relationship: '',
+      phone: '',
     },
-    insurance: {
-      provider: patientData.insurance?.provider || '',
-      policyNumber: patientData.insurance?.policyNumber || '',
-      groupNumber: patientData.insurance?.groupNumber || '',
+    insurance: patientData.insurance || {
+      provider: '',
+      policyNumber: '',
+      groupNumber: '',
     },
-    vitalSigns: {
-      bloodPressure: patientData.vitalSigns?.bloodPressure || '',
-      heartRate: patientData.vitalSigns?.heartRate || 0,
-      temperature: patientData.vitalSigns?.temperature || 0,
-      respiratoryRate: patientData.vitalSigns?.respiratoryRate || 0,
-      oxygenSaturation: patientData.vitalSigns?.oxygenSaturation || 0,
+    vitalSigns: patientData.vitalSigns || {
+      bloodPressure: '',
+      heartRate: 0,
+      temperature: 0,
+      respiratoryRate: 0,
+      oxygenSaturation: 0,
       timestamp: timestamp,
     },
-    medicalHistory: {
-      conditions: patientData.medicalHistory?.conditions || [],
-      surgeries: patientData.medicalHistory?.surgeries || [],
-      medications: patientData.medicalHistory?.medications || [],
-      allergies: patientData.medicalHistory?.allergies || [],
+    medicalHistory: patientData.medicalHistory || {
+      conditions: [],
+      surgeries: [],
+      medications: [],
+      allergies: [],
     },
     chiefComplaint: patientData.chiefComplaint || '',
     symptoms: patientData.symptoms || [],
     lastUpdated: timestamp,
-    lastUpdatedBy: 'current-user',
+    lastUpdatedBy: user.id,
+    createdBy: user.id,
     deleted: false,
   };
   
@@ -88,7 +92,6 @@ export async function addPatient(patientData: Omit<Patient, 'id'>) {
       await syncPatientWithServer(patient);
     } catch (error) {
       console.error('Error syncing new patient:', error);
-      // Add to sync queue for later
       await addToSyncQueue('add', patient);
     }
   } else {
@@ -117,15 +120,18 @@ export async function updatePatient(patient: Patient) {
   const db = await initDB();
   const timestamp = new Date().toISOString();
   
+  // Get current user ID
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('No authenticated user');
+  
   const updatedPatient = {
     ...patient,
     lastUpdated: timestamp,
-    lastUpdatedBy: 'current-user',
+    lastUpdatedBy: user.id,
   };
   
   await db.put(STORE_NAME, updatedPatient);
 
-  // Sync with server if online
   if (navigator.onLine) {
     try {
       await syncPatientWithServer(updatedPatient);
@@ -145,19 +151,22 @@ export async function softDeletePatient(id: string) {
   const patient = await db.get(STORE_NAME, id);
   if (!patient) return;
 
+  // Get current user ID
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('No authenticated user');
+
   const timestamp = new Date().toISOString();
   const updatedPatient = {
     ...patient,
     deleted: true,
     deletedAt: timestamp,
-    deletedBy: 'current-user',
+    deletedBy: user.id,
     lastUpdated: timestamp,
-    lastUpdatedBy: 'current-user',
+    lastUpdatedBy: user.id,
   };
 
   await db.put(STORE_NAME, updatedPatient);
 
-  // Sync deletion with server if online
   if (navigator.onLine) {
     try {
       await deletePatientFromServer(id);
@@ -198,7 +207,6 @@ export async function processOfflineQueue() {
           await deletePatientFromServer(item.data.id);
           break;
       }
-      // Remove processed item from queue
       await store.delete(item.id);
     } catch (error) {
       console.error('Error processing sync queue item:', error);

@@ -1,28 +1,49 @@
 import { createClient } from '@supabase/supabase-js';
-import { AUTH_CONFIG } from './auth';
+import { AUTH_CONFIG, getSiteUrl } from './auth';
 
+// Get environment variables
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+// Validate environment variables
 if (!supabaseUrl || !supabaseKey) {
-  console.warn('Missing Supabase credentials. Please check your environment variables.');
+  console.error('Missing Supabase credentials:', {
+    url: supabaseUrl ? 'Set' : 'Missing',
+    key: supabaseKey ? 'Set' : 'Missing'
+  });
 }
 
-// Get the deployment URL or fallback to current origin
-const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
+// Get the correct site URL for the current environment
+const siteUrl = getSiteUrl();
 
-export const supabase = createClient(supabaseUrl || '', supabaseKey || '', {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-    flowType: AUTH_CONFIG.flowType,
-    site: siteUrl,
-    redirectTo: `${siteUrl}/auth/callback`
-  },
-});
+// Create Supabase client with validated credentials
+export const supabase = createClient(
+  supabaseUrl || '',  // Fallback to empty string to prevent URL constructor error
+  supabaseKey || '',  // Fallback to empty string to prevent invalid key error
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      flowType: AUTH_CONFIG.flowType,
+      storage: window.localStorage,
+      storageKey: 'supabase.auth.token',
+      debug: import.meta.env.DEV,
+    },
+  }
+);
+
+// Helper to check if Supabase is properly configured
+export const isSupabaseConfigured = () => {
+  return Boolean(supabaseUrl && supabaseKey);
+};
 
 export const getActiveUser = async () => {
+  if (!isSupabaseConfigured()) {
+    console.error('Supabase is not properly configured');
+    return null;
+  }
+
   try {
     const { data: { user } } = await supabase.auth.getUser();
     return user;
