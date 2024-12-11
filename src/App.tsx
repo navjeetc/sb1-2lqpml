@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
 import { AuthGuard } from './components/AuthGuard';
@@ -12,6 +12,21 @@ import { VitalSigns } from './components/VitalSigns';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { addPatient } from './utils/db';
 import type { Patient } from './types/patient';
+
+function AuthCallback() {
+  const navigate = useNavigate();
+  
+  React.useEffect(() => {
+    // After auth callback, redirect to the main page
+    navigate('/', { replace: true });
+  }, [navigate]);
+
+  return (
+    <div className="flex justify-center items-center min-h-screen">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+    </div>
+  );
+}
 
 function NewPatientPage() {
   const navigate = useNavigate();
@@ -63,6 +78,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<AuthPage />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
           <Route
             path="/*"
             element={

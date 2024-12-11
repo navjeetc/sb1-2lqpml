@@ -16,3 +16,10 @@ export const AUTH_CONFIG = {
     },
   },
 };
+
+// Helper to get the correct site URL based on environment
+export function getSiteUrl(): string {
+  // Always use the current origin for auth callbacks
+  // This ensures it works in all environments (Bolt, local dev, production)
+  return window.location.origin;
+}

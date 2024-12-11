@@ -48,6 +48,7 @@ export interface Patient {
   symptoms: string[];
   lastUpdated: string;
   lastUpdatedBy: string;
+  createdBy: string;
   deleted?: boolean;
   deletedAt?: string;
   deletedBy?: string;
