@@ -1,5 +1,9 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { AuthProvider } from './contexts/AuthContext';
+import { AuthGuard } from './components/AuthGuard';
+import { AuthPage } from './pages/AuthPage';
 import { Layout } from './components/Layout';
 import { PatientForm } from './components/PatientForm';
 import { PatientList } from './components/PatientList';
@@ -39,19 +43,38 @@ function NewPatientPage() {
   );
 }
 
+function ProtectedRoutes() {
+  return (
+    <Layout>
+      <Routes>
+        <Route path="/" element={<Navigate to="/patients" />} />
+        <Route path="/patients" element={<PatientList />} />
+        <Route path="/patient/:id" element={<PatientDetails />} />
+        <Route path="/new" element={<NewPatientPage />} />
+      </Routes>
+      <OfflineIndicator />
+    </Layout>
+  );
+}
+
 function App() {
   return (
-    <BrowserRouter>
-      <Layout>
+    <AuthProvider>
+      <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Navigate to="/patients" />} />
-          <Route path="/patients" element={<PatientList />} />
-          <Route path="/patient/:id" element={<PatientDetails />} />
-          <Route path="/new" element={<NewPatientPage />} />
+          <Route path="/auth" element={<AuthPage />} />
+          <Route
+            path="/*"
+            element={
+              <AuthGuard>
+                <ProtectedRoutes />
+              </AuthGuard>
+            }
+          />
         </Routes>
-        <OfflineIndicator />
-      </Layout>
-    </BrowserRouter>
+        <Toaster position="top-right" />
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 

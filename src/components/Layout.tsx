@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Menu, Bell, User, LogOut, Users, Home, X, UserPlus } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
+import { useAuth } from '../contexts/AuthContext';
 import { appConfig } from '../config/appConfig';
 
 interface LayoutProps {
@@ -11,6 +12,8 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: Home },
@@ -34,6 +37,16 @@ export function Layout({ children }: LayoutProps) {
     });
   };
 
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate('/auth');
+    } catch (error) {
+      console.error('Error signing out:', error);
+      toast.error('Failed to sign out');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Toaster position="top-right" />
@@ -44,7 +57,7 @@ export function Layout({ children }: LayoutProps) {
       <div className={`fixed inset-y-0 left-0 w-64 bg-white shadow-lg transform transition-transform duration-300 z-30 ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
           <div className="flex items-center space-x-2">
-            <h1 className="text-xl font-semibold text-gray-900">MedOnboard</h1>
+            <h1 className="text-xl font-semibold text-gray-900">{appConfig.name}</h1>
             <span className="text-xs text-gray-500">v{appConfig.version}</span>
           </div>
           <button onClick={() => setIsMenuOpen(false)} className="p-2 rounded-md hover:bg-gray-100">
@@ -88,7 +101,7 @@ export function Layout({ children }: LayoutProps) {
               </button>
               <div className="flex items-center space-x-2 ml-4">
                 <h1 className="text-xl font-semibold text-gray-900">
-                  MedOnboard
+                  {appConfig.name}
                 </h1>
                 <span className="text-xs text-gray-500">v{appConfig.version}</span>
               </div>
@@ -107,7 +120,7 @@ export function Layout({ children }: LayoutProps) {
                 <User className="h-6 w-6 text-gray-600" />
               </button>
               <button 
-                onClick={() => handleFeatureClick('logout')}
+                onClick={handleSignOut}
                 className="p-2 rounded-md hover:bg-gray-100"
               >
                 <LogOut className="h-6 w-6 text-gray-600" />
