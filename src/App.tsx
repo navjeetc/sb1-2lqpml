@@ -8,12 +8,10 @@ import { AuthPage } from './pages/AuthPage';
 import { AuthCallback } from './components/AuthCallback';
 import { Layout } from './components/Layout';
 import { PatientForm } from './components/PatientForm';
-import { PatientList } from './components/PatientList';
+import { PatientList } from './components/PatientList/PatientList';
 import { PatientDetails } from './components/PatientDetails';
-import { VitalSigns } from './components/VitalSigns';
-import { OfflineIndicator } from './components/OfflineIndicator';
-import { addPatient } from './utils/db';
-import type { Patient } from './types/patient';
+import { Dashboard } from './pages/Dashboard';
+import { addPatient } from './utils/db/patientOperations';
 
 function NewPatientPage() {
   const navigate = useNavigate();
@@ -24,42 +22,27 @@ function NewPatientPage() {
       navigate('/patients');
     } catch (error) {
       console.error('Error saving patient:', error);
-      alert('Error saving patient. Please try again.');
+      toast.error('Error saving patient. Please try again.');
     }
   };
 
-  const mockVitals = {
-    bloodPressure: "120/80",
-    heartRate: 72,
-    temperature: 98.6,
-    respiratoryRate: 16,
-    oxygenSaturation: 98,
-    timestamp: new Date().toISOString()
-  };
-
-  return (
-    <>
-      <VitalSigns {...mockVitals} onUpdate={() => {}} />
-      <PatientForm onSubmit={handleSubmit} />
-    </>
-  );
+  return <PatientForm onSubmit={handleSubmit} />;
 }
 
 function ProtectedRoutes() {
   return (
     <Layout>
       <Routes>
-        <Route path="/" element={<Navigate to="/patients" />} />
+        <Route path="/" element={<Dashboard />} />
         <Route path="/patients" element={<PatientList />} />
         <Route path="/patient/:id" element={<PatientDetails />} />
         <Route path="/new" element={<NewPatientPage />} />
       </Routes>
-      <OfflineIndicator />
     </Layout>
   );
 }
 
-function App() {
+export default function App() {
   return (
     <AuthProvider>
       <RoleProvider>
@@ -82,5 +65,3 @@ function App() {
     </AuthProvider>
   );
 }
-
-export default App;

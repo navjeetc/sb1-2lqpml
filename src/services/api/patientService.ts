@@ -34,18 +34,27 @@ export async function fetchPatientsFromServer(): Promise<Patient[]> {
   }
 
   try {
-    const { data: user } = await supabase.auth.getUser();
-    if (!user.user) throw new Error('No authenticated user');
-
     const { data, error } = await supabase
       .from('patients')
-      .select('*')
-      .eq('created_by', user.user.id)
-      .eq('deleted', false)
+      .select('*, created_by')
       .order('updated_at', { ascending: false });
 
     if (error) throw error;
-    return (data || []).map(toClientModel);
+
+    // Get creator emails in parallel
+    const patients = await Promise.all(
+      data.map(async (record) => {
+        const { data: email } = await supabase
+          .rpc('get_user_email', { user_id: record.created_by });
+
+        return {
+          ...toClientModel(record),
+          creatorEmail: email || 'Unknown'
+        };
+      })
+    );
+
+    return patients;
   } catch (error) {
     console.error('Error fetching patients from server:', error);
     return [];
@@ -71,8 +80,7 @@ export async function deletePatientFromServer(id: string): Promise<void> {
         updated_at: new Date().toISOString(),
         updated_by: user.user.id
       })
-      .eq('id', id)
-      .eq('created_by', user.user.id);
+      .eq('id', id);
 
     if (error) throw error;
   } catch (error) {
