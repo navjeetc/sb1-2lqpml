@@ -4,9 +4,6 @@ import { getCurrentUser } from './sessionService';
 
 export async function assignDefaultRole(userId: string): Promise<void> {
   try {
-    const user = await getCurrentUser();
-    if (!user) throw new Error('No authenticated user');
-
     // First check if role already exists
     const { data: existingRole } = await supabase
       .from('user_roles')
@@ -19,19 +16,12 @@ export async function assignDefaultRole(userId: string): Promise<void> {
       return;
     }
 
-    // Insert new role
+    // Call the RPC function to ensure role
     const { error } = await supabase
-      .from('user_roles')
-      .insert({
-        user_id: userId,
-        role: 'receptionist',
-        created_by: userId,
-        updated_by: userId
-      })
-      .single();
+      .rpc('ensure_user_role', { user_id: userId });
 
     if (error) {
-      console.error('Error inserting role:', error);
+      console.error('Error assigning role:', error);
       throw error;
     }
 

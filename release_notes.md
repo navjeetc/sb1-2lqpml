@@ -1,3 +1,6 @@
+* 1.12
+  * Fixed issue with default role assignment on signup
+    
 * 1.11
   * Improved Supabase configuration and connection management
   * Added connection monitoring and automatic reconnection

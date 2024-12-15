@@ -16,20 +16,33 @@ export async function signUpUser(email: string, password: string) {
     if (authError) throw authError;
     if (!authData.user) throw new Error('No user data returned');
 
-    // Wait a moment for the trigger to execute
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Wait for trigger to execute (with timeout)
+    let attempts = 0;
+    const maxAttempts = 3;
+    const delay = 1000; // 1 second between attempts
 
-    // Check if role was assigned by trigger
-    const hasRole = await checkRoleExists(authData.user.id);
-    
-    // If trigger failed, try to assign role directly
-    if (!hasRole) {
-      try {
-        await assignDefaultRole(authData.user.id);
-      } catch (roleError) {
-        console.error('Role assignment error:', roleError);
-        // Continue with signup even if role assignment fails
-        // The role can be assigned later
+    while (attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, delay));
+      
+      // Check if role was assigned by trigger
+      const hasRole = await checkRoleExists(authData.user.id);
+      if (hasRole) {
+        console.log('Role assigned successfully by trigger');
+        break;
+      }
+
+      attempts++;
+      
+      // On last attempt, try to assign role manually
+      if (attempts === maxAttempts) {
+        console.log('Trigger failed to assign role, attempting manual assignment');
+        try {
+          await assignDefaultRole(authData.user.id);
+        } catch (roleError) {
+          console.error('Manual role assignment failed:', roleError);
+          // Continue with signup even if role assignment fails
+          // The role can be assigned later
+        }
       }
     }
 

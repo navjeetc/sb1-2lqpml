@@ -1,9 +1,8 @@
+// Re-export all Supabase configuration
 export * from './types';
-export * from './errors';
-export { getSupabaseConfig, isSupabaseConfigured } from './config';
-export { getSupabaseClient, supabase } from './client';
-export { 
-  checkSupabaseConnection, 
-  getConnectionStatus,
-  setupConnectionMonitoring 
-} from './connection';
+export * from './config';
+export * from './client';
+export * from './connection';
+
+// For backward compatibility
+export { supabase } from './client';
