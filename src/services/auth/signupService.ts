@@ -1,5 +1,5 @@
 import { supabase } from '../../config/supabase';
-import { assignDefaultRole } from './roleService';
+import { assignDefaultRole, checkRoleExists } from './roleService';
 import type { AuthError } from '@supabase/supabase-js';
 
 export async function signUpUser(email: string, password: string) {
@@ -16,13 +16,21 @@ export async function signUpUser(email: string, password: string) {
     if (authError) throw authError;
     if (!authData.user) throw new Error('No user data returned');
 
-    // Then, assign the default role
-    try {
-      await assignDefaultRole(authData.user.id);
-    } catch (roleError) {
-      console.error('Role assignment error:', roleError);
-      // Continue with signup even if role assignment fails
-      // The role will be assigned by the database trigger
+    // Wait a moment for the trigger to execute
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Check if role was assigned by trigger
+    const hasRole = await checkRoleExists(authData.user.id);
+    
+    // If trigger failed, try to assign role directly
+    if (!hasRole) {
+      try {
+        await assignDefaultRole(authData.user.id);
+      } catch (roleError) {
+        console.error('Role assignment error:', roleError);
+        // Continue with signup even if role assignment fails
+        // The role can be assigned later
+      }
     }
 
     return { data: authData, error: null };

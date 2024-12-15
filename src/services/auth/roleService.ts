@@ -1,9 +1,25 @@
 import { supabase } from '../../config/supabase';
 import type { UserRole } from '../../types/role';
+import { getCurrentUser } from './sessionService';
 
 export async function assignDefaultRole(userId: string): Promise<void> {
   try {
-    // Direct insert approach instead of RPC
+    const user = await getCurrentUser();
+    if (!user) throw new Error('No authenticated user');
+
+    // First check if role already exists
+    const { data: existingRole } = await supabase
+      .from('user_roles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (existingRole) {
+      console.log('Role already exists for user:', userId);
+      return;
+    }
+
+    // Insert new role
     const { error } = await supabase
       .from('user_roles')
       .insert({
@@ -15,24 +31,13 @@ export async function assignDefaultRole(userId: string): Promise<void> {
       .single();
 
     if (error) {
-      // If insert fails due to unique constraint, try update
-      if (error.code === '23505') {
-        const { error: updateError } = await supabase
-          .from('user_roles')
-          .update({
-            role: 'receptionist',
-            updated_by: userId,
-            updated_at: new Date().toISOString()
-          })
-          .eq('user_id', userId);
-
-        if (updateError) throw updateError;
-      } else {
-        throw error;
-      }
+      console.error('Error inserting role:', error);
+      throw error;
     }
+
+    console.log('Role assigned successfully for user:', userId);
   } catch (error) {
-    console.error('Error assigning default role:', error);
+    console.error('Error in assignDefaultRole:', error);
     throw error;
   }
 }
@@ -45,10 +50,34 @@ export async function getUserRole(userId: string): Promise<UserRole | null> {
       .eq('user_id', userId)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching user role:', error);
+      throw error;
+    }
+
     return data?.role || null;
   } catch (error) {
-    console.error('Error getting user role:', error);
+    console.error('Error in getUserRole:', error);
     return null;
+  }
+}
+
+export async function checkRoleExists(userId: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // Not found error
+      console.error('Error checking role:', error);
+      throw error;
+    }
+
+    return !!data;
+  } catch (error) {
+    console.error('Error in checkRoleExists:', error);
+    return false;
   }
 }
