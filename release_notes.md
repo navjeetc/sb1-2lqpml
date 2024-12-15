@@ -6,18 +6,15 @@
   * Added connection monitoring and automatic reconnection
   * Better error handling for database operations
   * Code organization improvements
-
 * 1.10
   * Fixed database queries and column ambiguity
   * Improved error handling in sync operations
   * Better offline support
   * Reorganized code for better maintainability
-
 * 1.09
   * Fixed user signup and role assignment
   * Added proper error handling for authentication
   * Improved form validation
-
 * 1.08
   * Display who created patient record
 

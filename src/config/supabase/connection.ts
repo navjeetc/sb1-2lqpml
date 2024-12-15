@@ -21,13 +21,13 @@ export async function checkSupabaseConnection(): Promise<boolean> {
       .single();
 
     await Promise.race([checkPromise, timeoutPromise]);
-    
+
     connectionStatus = {
       isConnected: true,
       lastChecked: new Date(),
       error: null
     };
-    
+
     return true;
   } catch (error) {
     connectionStatus = {
@@ -35,7 +35,7 @@ export async function checkSupabaseConnection(): Promise<boolean> {
       lastChecked: new Date(),
       error: error instanceof Error ? error : new Error('Unknown error')
     };
-    
+
     console.error('Supabase connection check failed:', error);
     return false;
   }

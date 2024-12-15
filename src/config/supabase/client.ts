@@ -11,7 +11,7 @@ export function getSupabaseClient() {
 
   try {
     const config = getSupabaseConfig();
-    
+
     supabaseInstance = createClient(config.url, config.anonKey, {
       auth: {
         persistSession: true,
