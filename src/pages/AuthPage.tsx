@@ -2,8 +2,8 @@ import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
-import { supabase, isSupabaseConfigured } from '../config/supabase';
-import { AUTH_CONFIG, getSiteUrl } from '../config/auth';
+import { supabase } from '../config/supabase';
+import { AUTH_CONFIG } from '../config/auth';
 import { useAuth } from '../contexts/AuthContext';
 import { appConfig } from '../config/appConfig';
 import { Stethoscope } from 'lucide-react';
@@ -13,8 +13,6 @@ export function AuthPage() {
   const location = useLocation();
   const { user } = useAuth();
   const from = (location.state as any)?.from?.pathname || '/';
-  const siteUrl = getSiteUrl();
-  const isConfigured = isSupabaseConfigured();
 
   useEffect(() => {
     if (user) {
@@ -39,34 +37,27 @@ export function AuthPage() {
           </p>
         </div>
 
-        {isConfigured ? (
-          <div className="mt-8">
-            <Auth
-              supabaseClient={supabase}
-              appearance={{
-                theme: ThemeSupa,
-                variables: {
-                  default: {
-                    colors: AUTH_CONFIG.appearance.theme.colors
-                  },
-                },
-                className: AUTH_CONFIG.appearance.classes,
-              }}
-              providers={AUTH_CONFIG.providers}
-              redirectTo={`${siteUrl}/auth/callback`}
-            />
-          </div>
-        ) : (
-          <div className="mt-4 p-4 bg-red-50 rounded-md">
-            <p className="text-sm text-red-600">
-              Error: Authentication not properly configured. Please check your environment variables:
-              <ul className="list-disc ml-4 mt-2">
-                <li>VITE_SUPABASE_URL</li>
-                <li>VITE_SUPABASE_ANON_KEY</li>
-              </ul>
-            </p>
-          </div>
-        )}
+        <Auth
+          supabaseClient={supabase}
+          appearance={{
+            theme: ThemeSupa,
+            variables: {
+              default: {
+                colors: {
+                  brand: '#2563eb',
+                  brandAccent: '#1d4ed8',
+                }
+              },
+            },
+            className: {
+              container: 'w-full',
+              button: 'w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md',
+              input: 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+            },
+          }}
+          providers={[]}
+          redirectTo={`${window.location.origin}/auth/callback`}
+        />
       </div>
     </div>
   );
