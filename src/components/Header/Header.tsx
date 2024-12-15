@@ -2,6 +2,7 @@ import React from 'react';
 import { Menu } from 'lucide-react';
 import { appConfig } from '../../config/appConfig';
 import { NotificationBell } from './NotificationBell';
+import { SyncButton } from './SyncButton';
 import { UserMenu } from './UserMenu';
 import { LogoutButton } from './LogoutButton';
 
@@ -30,6 +31,7 @@ export function Header({ onMenuClick }: HeaderProps) {
           </div>
           <div className="flex items-center space-x-2">
             <NotificationBell />
+            <SyncButton />
             <UserMenu />
             <LogoutButton />
           </div>
