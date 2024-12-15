@@ -1,4 +1,4 @@
-// Re-export all database operations
-export * from './initDb';
+// Re-export database operations
 export * from './patientOperations';
 export * from './syncOperations';
+export * from './initDb';
