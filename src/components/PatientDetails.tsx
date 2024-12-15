@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ArrowLeft, User, Activity, FileText, AlertTriangle, Trash2 } from 'lucide-react';
-import { getPatient, softDeletePatient } from '../utils/db';
+import { getPatient, softDeletePatient } from '../utils/db/patientOperations';
 import type { Patient } from '../types/patient';
 import { VitalSigns } from './VitalSigns';
+import { LoadingSpinner } from './ui/LoadingSpinner';
 import toast from 'react-hot-toast';
 
 export function PatientDetails() {
@@ -57,11 +58,7 @@ export function PatientDetails() {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error || !patient) {
@@ -102,8 +99,23 @@ export function PatientDetails() {
         </div>
       </div>
 
-      {/* Rest of the component remains the same */}
-      {/* ... */}
+      <div className="bg-white shadow-sm rounded-lg p-6">
+        <div className="flex items-center space-x-4 mb-6">
+          <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center">
+            <User className="h-6 w-6 text-gray-500" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {patient.firstName} {patient.lastName}
+            </h1>
+            <p className="text-sm text-gray-500">
+              Patient ID: {patient.id}
+            </p>
+          </div>
+        </div>
+
+        <VitalSigns {...patient.vitalSigns} onUpdate={() => {}} />
+      </div>
     </div>
   );
 }
