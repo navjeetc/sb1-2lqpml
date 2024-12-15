@@ -1,8 +1,12 @@
 import { supabase } from '../../config/supabase';
+import { getCurrentUser } from '../auth';
 import type { Patient } from '../../types/patient';
 
 // Convert client model to database model
-function toDbModel(patient: Patient) {
+async function toDbModel(patient: Patient) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error('No authenticated user');
+
   return {
     id: patient.id,
     first_name: patient.firstName,
@@ -34,6 +38,9 @@ function toDbModel(patient: Patient) {
     deleted: patient.deleted || false,
     deleted_at: patient.deletedAt,
     deleted_by: patient.deletedBy,
+    // Add user tracking fields
+    created_by: patient.createdBy || user.id,
+    updated_by: user.id
   };
 }
 
@@ -70,7 +77,7 @@ export async function syncPatientWithServer(patient: Patient): Promise<void> {
   }
 
   try {
-    const dbModel = toDbModel(patient);
+    const dbModel = await toDbModel(patient);
     const { error } = await supabase
       .from('patients')
       .upsert(dbModel);
@@ -109,11 +116,16 @@ export async function deletePatientFromServer(id: string): Promise<void> {
   }
 
   try {
+    const user = await getCurrentUser();
+    if (!user) throw new Error('No authenticated user');
+
     const { error } = await supabase
       .from('patients')
       .update({ 
         deleted: true, 
-        deleted_at: new Date().toISOString()
+        deleted_at: new Date().toISOString(),
+        deleted_by: user.id,
+        updated_by: user.id
       })
       .eq('id', id);
 

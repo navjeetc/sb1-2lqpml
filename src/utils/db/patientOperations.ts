@@ -3,14 +3,51 @@ import type { Patient } from '../../types/patient';
 import { initDB, STORE_NAME } from './initDb';
 import { addToSyncQueue } from './syncOperations';
 import { syncPatientWithServer, deletePatientFromServer, fetchPatientsFromServer } from '../../services/api';
+import { getCurrentUser } from '../../services/auth';
 
-export async function addPatient(patientData: Omit<Patient, 'id'>) {
+export async function getAllPatients(): Promise<Patient[]> {
+  try {
+    // First try to get patients from server
+    const serverPatients = await fetchPatientsFromServer();
+    
+    // If we got server data, sync it with local and return
+    if (serverPatients.length > 0) {
+      const db = await initDB();
+      // Update local database with server data
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      for (const patient of serverPatients) {
+        await tx.store.put(patient);
+      }
+      await tx.done;
+      return serverPatients;
+    }
+
+    // If no server data, fall back to local data
+    const db = await initDB();
+    const patients = await db.getAll(STORE_NAME);
+    return patients.filter(patient => !patient.deleted);
+  } catch (error) {
+    console.error('Error getting patients:', error);
+    // If server fetch fails, fall back to local data
+    const db = await initDB();
+    const patients = await db.getAll(STORE_NAME);
+    return patients.filter(patient => !patient.deleted);
+  }
+}
+
+export async function getPatient(id: string): Promise<Patient | null> {
+  const db = await initDB();
+  const patient = await db.get(STORE_NAME, id);
+  if (patient?.deleted) return null;
+  return patient;
+}
+
+export async function addPatient(patientData: Omit<Patient, 'id'>): Promise<Patient> {
   const db = await initDB();
   const id = crypto.randomUUID();
   const timestamp = new Date().toISOString();
   
-  // Get current user ID
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) throw new Error('No authenticated user');
   
   const patient: Patient = {
@@ -61,7 +98,6 @@ export async function addPatient(patientData: Omit<Patient, 'id'>) {
   
   await db.add(STORE_NAME, patient);
 
-  // Sync with server if online
   if (navigator.onLine) {
     try {
       await syncPatientWithServer(patient);
@@ -76,49 +112,11 @@ export async function addPatient(patientData: Omit<Patient, 'id'>) {
   return patient;
 }
 
-export async function getAllPatients() {
-  try {
-    // First try to get patients from server
-    const serverPatients = await fetchPatientsFromServer();
-    
-    // If we got server data, sync it with local and return
-    if (serverPatients.length > 0) {
-      const db = await initDB();
-      // Update local database with server data
-      const tx = db.transaction(STORE_NAME, 'readwrite');
-      for (const patient of serverPatients) {
-        await tx.store.put(patient);
-      }
-      await tx.done;
-      return serverPatients;
-    }
-
-    // If no server data, fall back to local data
-    const db = await initDB();
-    const patients = await db.getAll(STORE_NAME);
-    return patients.filter(patient => !patient.deleted);
-  } catch (error) {
-    console.error('Error getting patients:', error);
-    // If server fetch fails, fall back to local data
-    const db = await initDB();
-    const patients = await db.getAll(STORE_NAME);
-    return patients.filter(patient => !patient.deleted);
-  }
-}
-
-export async function getPatient(id: string) {
-  const db = await initDB();
-  const patient = await db.get(STORE_NAME, id);
-  if (patient?.deleted) return null;
-  return patient;
-}
-
-export async function updatePatient(patient: Patient) {
+export async function updatePatient(patient: Patient): Promise<Patient> {
   const db = await initDB();
   const timestamp = new Date().toISOString();
   
-  // Get current user ID
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) throw new Error('No authenticated user');
   
   const updatedPatient = {
@@ -143,13 +141,12 @@ export async function updatePatient(patient: Patient) {
   return updatedPatient;
 }
 
-export async function softDeletePatient(id: string) {
+export async function softDeletePatient(id: string): Promise<void> {
   const db = await initDB();
   const patient = await db.get(STORE_NAME, id);
   if (!patient) return;
 
-  // Get current user ID
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) throw new Error('No authenticated user');
 
   const timestamp = new Date().toISOString();
@@ -174,6 +171,4 @@ export async function softDeletePatient(id: string) {
   } else {
     await addToSyncQueue('delete', { id });
   }
-
-  return updatedPatient;
 }
