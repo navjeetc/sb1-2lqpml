@@ -1,5 +1,6 @@
 // Re-export all patient operations
-export * from './operations/getPatients';
-export * from './operations/addPatient';
-export * from './operations/updatePatient';
-export * from './operations/deletePatient';
+export { getAllPatients } from './operations/getPatients';
+export { getPatient } from './operations/getPatient';
+export { addPatient } from './operations/addPatient';
+export { updatePatient } from './operations/updatePatient';
+export { softDeletePatient } from './operations/deletePatient';
