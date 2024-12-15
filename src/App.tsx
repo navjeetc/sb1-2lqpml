@@ -7,27 +7,10 @@ import { AuthGuard } from './components/AuthGuard';
 import { AuthPage } from './pages/AuthPage';
 import { AuthCallback } from './components/AuthCallback';
 import { Layout } from './components/Layout';
-import { PatientForm } from './components/PatientForm';
 import { PatientList } from './components/PatientList/PatientList';
 import { PatientDetails } from './components/PatientDetails';
 import { Dashboard } from './pages/Dashboard';
-import { addPatient } from './utils/db/patientOperations';
-
-function NewPatientPage() {
-  const navigate = useNavigate();
-  
-  const handleSubmit = async (data: Omit<Patient, 'id'>) => {
-    try {
-      await addPatient(data);
-      navigate('/patients');
-    } catch (error) {
-      console.error('Error saving patient:', error);
-      toast.error('Error saving patient. Please try again.');
-    }
-  };
-
-  return <PatientForm onSubmit={handleSubmit} />;
-}
+import { NewPatientPage } from './pages/NewPatient';
 
 function ProtectedRoutes() {
   return (
