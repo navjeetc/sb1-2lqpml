@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getUserRole } from '../services/api/roleService';
-import { checkSupabaseConnection } from '../config/supabase';
+import { supabase, isSupabaseConfigured } from '../config/supabase';
 import type { UserRole } from '../types/role';
 
 export function useUserRole() {
@@ -21,10 +21,9 @@ export function useUserRole() {
       setLoading(true);
       setError(null);
 
-      // Check database connection first
-      const isConnected = await checkSupabaseConnection();
-      if (!isConnected) {
-        throw new Error('Database connection failed');
+      // Check if Supabase is configured
+      if (!isSupabaseConfigured()) {
+        throw new Error('Database connection not configured');
       }
 
       const userRole = await getUserRole();
