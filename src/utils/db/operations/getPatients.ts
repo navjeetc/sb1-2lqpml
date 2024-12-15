@@ -2,6 +2,7 @@ import { initDB, STORE_NAME } from '../initDb';
 import { fetchPatientsFromServer } from '../../../services/api';
 import { getCurrentUser } from '../../../services/auth';
 import { getUserRole } from '../../../services/api/roleService';
+import type { Patient } from '../../../types/patient';
 
 export async function getAllPatients(): Promise<Patient[]> {
   try {
@@ -23,36 +24,42 @@ export async function getAllPatients(): Promise<Patient[]> {
       }
       await tx.done;
 
-      // Filter for patient role
-      if (role === 'patient') {
+      // Return all patients for admin, filter for others
+      if (role === 'admin') {
+        return serverPatients;
+      } else if (role === 'patient') {
         return serverPatients.filter(p => p.createdBy === user.id && !p.deleted);
+      } else {
+        return serverPatients.filter(p => !p.deleted);
       }
-      return serverPatients.filter(p => !p.deleted);
     }
 
     // If no server data, fall back to local data
     const db = await initDB();
     const patients = await db.getAll(STORE_NAME);
-    const nonDeletedPatients = patients.filter(p => !p.deleted);
 
-    // Filter for patient role
-    if (role === 'patient') {
-      return nonDeletedPatients.filter(p => p.createdBy === user.id);
+    // Return all patients for admin, filter for others
+    if (role === 'admin') {
+      return patients;
+    } else if (role === 'patient') {
+      return patients.filter(p => p.createdBy === user.id && !p.deleted);
+    } else {
+      return patients.filter(p => !p.deleted);
     }
-    return nonDeletedPatients;
   } catch (error) {
     console.error('Error getting patients:', error);
     // If server fetch fails, fall back to local data
     const db = await initDB();
     const patients = await db.getAll(STORE_NAME);
-    const nonDeletedPatients = patients.filter(p => !p.deleted);
 
-    // Still apply patient role filter even in error case
-    const user = await getCurrentUser();
+    // Still apply role-based filtering even in error case
     const role = await getUserRole();
-    if (role === 'patient' && user) {
-      return nonDeletedPatients.filter(p => p.createdBy === user.id);
+    if (role === 'admin') {
+      return patients;
+    } else if (role === 'patient' && user) {
+      return patients.filter(p => p.createdBy === user.id && !p.deleted);
+    } else {
+      return patients.filter(p => !p.deleted);
     }
-    return nonDeletedPatients;
   }
 }

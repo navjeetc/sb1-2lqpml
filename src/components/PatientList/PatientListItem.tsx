@@ -23,9 +23,16 @@ export function PatientListItem({ patient }: PatientListItemProps) {
           </div>
           <div className="ml-4 flex-1">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-900">
-                {patient.firstName} {patient.lastName}
-              </p>
+              <div>
+                <p className="text-sm font-medium text-gray-900">
+                  {patient.firstName} {patient.lastName}
+                </p>
+                {patient.deleted && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                    Deleted
+                  </span>
+                )}
+              </div>
               <ChevronRight className="h-5 w-5 text-gray-400" />
             </div>
             <div className="mt-1 space-y-1">
