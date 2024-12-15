@@ -1,6 +1,5 @@
 import { getSupabaseClient } from './client';
 import { ConnectionStatus } from './types';
-import { SupabaseConnectionError } from './errors';
 
 let connectionStatus: ConnectionStatus = {
   isConnected: false,
@@ -12,7 +11,7 @@ export async function checkSupabaseConnection(): Promise<boolean> {
   try {
     const supabase = getSupabaseClient();
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new SupabaseConnectionError('Connection timeout')), 5000);
+      setTimeout(() => reject(new Error('Connection timeout')), 5000);
     });
 
     const checkPromise = supabase

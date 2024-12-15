@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { getSupabaseConfig } from './config';
-import { SupabaseConfigError } from './errors';
-import { AUTH_CONFIG } from '../auth';
+import { SupabaseConfigError } from './types';
 
 let supabaseInstance: ReturnType<typeof createClient> | null = null;
 
@@ -13,14 +12,11 @@ export function getSupabaseClient() {
   try {
     const config = getSupabaseConfig();
     
-    supabaseInstance = createClient(config.supabaseUrl, config.supabaseKey, {
+    supabaseInstance = createClient(config.url, config.anonKey, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
-        flowType: AUTH_CONFIG.flowType,
-        storage: window.localStorage,
-        storageKey: 'supabase.auth.token',
       },
     });
 

@@ -1,21 +1,21 @@
+import { env } from '../env';
 import { SupabaseConfig } from './types';
-import { SupabaseConfigError } from './errors';
+import { SupabaseConfigError } from './types';
 
 export function getSupabaseConfig(): SupabaseConfig {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const { url, anonKey } = env.supabase;
 
-  if (!supabaseUrl || !supabaseKey) {
+  if (!url || !anonKey) {
     throw new SupabaseConfigError('Missing Supabase configuration. Check environment variables.');
   }
 
-  return { supabaseUrl, supabaseKey };
+  return { url, anonKey };
 }
 
 export function isSupabaseConfigured(): boolean {
   try {
     const config = getSupabaseConfig();
-    return Boolean(config.supabaseUrl && config.supabaseKey);
+    return Boolean(config.url && config.anonKey);
   } catch {
     return false;
   }
