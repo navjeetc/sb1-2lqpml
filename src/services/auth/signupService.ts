@@ -23,7 +23,6 @@ export async function signUpUser(email: string, password: string) {
 
     while (attempts < maxAttempts) {
       await new Promise(resolve => setTimeout(resolve, delay));
-      
       // Check if role was assigned by trigger
       const hasRole = await checkRoleExists(authData.user.id);
       if (hasRole) {
@@ -32,7 +31,6 @@ export async function signUpUser(email: string, password: string) {
       }
 
       attempts++;
-      
       // On last attempt, try to assign role manually
       if (attempts === maxAttempts) {
         console.log('Trigger failed to assign role, attempting manual assignment');

@@ -10,10 +10,9 @@ export async function getAllPatients(): Promise<Patient[]> {
     if (!user) throw new Error('No authenticated user');
 
     const role = await getUserRole();
-    
     // First try to get patients from server
     const serverPatients = await fetchPatientsFromServer();
-    
+
     // If we got server data, sync it with local and return
     if (serverPatients.length > 0) {
       const db = await initDB();
