@@ -19,8 +19,8 @@ export const patientSchema = z.object({
     phone: z.string().min(1, 'Emergency contact phone is required'),
   }),
   insurance: z.object({
-    provider: z.string().min(1, 'Insurance provider is required'),
-    policyNumber: z.string().min(1, 'Policy number is required'),
-    groupNumber: z.string().min(1, 'Group number is required'),
-  }),
+    provider: z.string().optional(),
+    policyNumber: z.string().optional(),
+    groupNumber: z.string().optional(),
+  }).optional(),
 });

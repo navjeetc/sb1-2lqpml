@@ -1,3 +1,6 @@
+* 1.14
+  * Made insurance field optional
+  
 * 1.13
   * Improved configuration management
   * Split configuration into smaller, focused modules
