@@ -1,9 +1,11 @@
+* 1.14
+  * Made insurance field optional
+  
 * 1.13
   * Improved configuration management
   * Split configuration into smaller, focused modules
   * Enhanced type safety for environment variables
   * Added better documentation for configuration options
-    
 * 1.12
   * Fixed issue with default role assignment on signup
 * 1.11
