@@ -1,6 +1,17 @@
+* 1.15.2
+  * Added doctor specialties and profile management
+  * Created new profile page for all users
+  * Enhanced doctor profiles with specialty, education, and experience fields
+  * Added dropdown menu to user icon with profile access
+  * Implemented profile editing for doctors
+  * Added database support for doctor profiles with proper security policies
+  * Only doctors can access their own profile
+  * Fixed issue with doctor profile creation
+  * Only show profile edit button if profile exists
+
 * 1.14
   * Made insurance field optional
-  
+
 * 1.13
   * Improved configuration management
   * Split configuration into smaller, focused modules
