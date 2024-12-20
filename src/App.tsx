@@ -11,6 +11,7 @@ import { PatientList } from './components/PatientList/PatientList';
 import { PatientDetails } from './components/PatientDetails';
 import { Dashboard } from './pages/Dashboard';
 import { NewPatientPage } from './pages/NewPatient';
+import { Profile } from './pages/Profile';
 
 function ProtectedRoutes() {
   return (
@@ -20,6 +21,7 @@ function ProtectedRoutes() {
         <Route path="/patients" element={<PatientList />} />
         <Route path="/patient/:id" element={<PatientDetails />} />
         <Route path="/new" element={<NewPatientPage />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </Layout>
   );

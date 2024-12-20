@@ -1,13 +1,14 @@
 import { supabase } from '../../config/supabase';
 import type { UserRole } from '../../types/role';
-import { getCurrentUser } from './sessionService';
+import { createDoctorProfile } from '../api/doctorService';
+import { DOCTOR_SPECIALTIES } from '../../types/doctor';
 
 export async function assignDefaultRole(userId: string): Promise<void> {
   try {
     // First check if role already exists
     const { data: existingRole } = await supabase
       .from('user_roles')
-      .select('id')
+      .select('id, role')
       .eq('user_id', userId)
       .single();
 
@@ -23,6 +24,18 @@ export async function assignDefaultRole(userId: string): Promise<void> {
     if (error) {
       console.error('Error assigning role:', error);
       throw error;
+    }
+
+    // Check if the assigned role is a doctor
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .single();
+
+    if (roleData?.role === 'doctor') {
+      // Create doctor profile with default specialty
+      await createDoctorProfile(userId, DOCTOR_SPECIALTIES.GENERAL_PHYSICIAN);
     }
 
     console.log('Role assigned successfully for user:', userId);
